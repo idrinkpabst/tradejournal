@@ -1,1 +1,58 @@
-h1 Pages.index
+h1 Index
+
+
+= simple_form_for(:converter, html: { id: 'converter_form', class: 'form-horizontal' }) do |f|
+  = f.input :executions, as: :text, input_html: { id: 'execution_input' }
+  = f.submit
+
+pre
+  #answer
+
+
+coffee:
+
+  convert_symbol = (symbol, trades) ->
+    plot_line = []
+    for trade, index in trades
+      [hour, minute, second] = trade['time'].split(':')
+      hour_minute = "#{hour}#{minute}"
+      price = trade['price']
+      var_name = "x#{hour}#{minute}#{second}#{index}"
+      color = trade['action'] == 'BOT' ? 'DARK_GREEN' : 'RED'
+      arrow = trade['action'] == 'BOT' ? 'ARROW_UP' : 'ARROW_DOWN'
+      plot_line.push "plot #{var_name} if { secondsfromtime(#{hour_minute}) == 0 then #{price} else double.nan;"
+      plot_line.push "#{var_name}.SetDefaultColor(color.#{color});"
+      plot_line.push "#{var_name}.SetStyle(curve.POINTS);"
+      plot_line.push "#{var_name}.setLineWeight(5);"
+      plot_line.push "#{var_name}.SetPaintingStrategy(paintingStrategy.#{arrow});"
+      plot_line.push ""
+    plot_line.join('\n')
+
+
+  convert = (execution_text) ->
+    lines = execution_text.split('\n')
+    executions = {}
+    for line, i in lines
+      continue if i == 0
+      fields = line.split(/\s+/)
+      symbol = fields[2]
+      executions[symbol] = [] if executions[symbol] is undefined
+      executions[symbol].push {
+        time: fields[1],
+        action: fields[3],
+        quantity: fields[4],
+        price: fields[5]
+      }
+    #JSON.stringify(executions)
+    output_lines = ""
+    for symbol, data of executions
+      output_lines += "\n\n#{symbol}\n"
+      output_lines += convert_symbol(symbol, data)
+    output_lines
+
+  $ ->
+    $('#converter_form').submit -> false
+    $(':submit').click ->
+      input = $('#execution_input').val()
+      converted_input = convert(input)
+      $('#answer').text(converted_input)
