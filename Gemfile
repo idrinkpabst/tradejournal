@@ -26,6 +26,8 @@ gem 'jquery-ui-rails', '4.0.2'
 
 
 gem 'capistrano', '2.14.1'
+gem 'slim', '1.3.6'
+
 
 group :development, :test do
   gem 'rspec-rails', '2.12.2'
